@@ -7,6 +7,8 @@ var App = {
   space: undefined,
   spaceName: "myApp",
   openDoc: undefined,
+  docTitlesList: {},
+  docTitlesListKey: "__docTitles",
 
   init: function() {
     return App.initWeb3();
@@ -57,6 +59,13 @@ var App = {
   },
 
   render: function() {
+
+    App.space.private.get(App.docTitlesListKey).then(function(titlesList) {
+      if (titlesList != null) {
+        App.docTitlesList = titlesList;
+      }
+    });
+
     $(document).on("click", "#create-new-btn", function() {
       App.openEditor();
     });
@@ -100,7 +109,10 @@ var App = {
     }
     App.openDoc.title = $("#heading").text();
     App.openDoc.content = $("#text").html();
-    App.space.private.set(App.openDoc.id, App.openDoc);
+    App.space.private.set(App.openDoc.id, App.openDoc).then(function(itWorked) {;
+      App.docTitlesList[App.openDoc.id] = App.openDoc.title;
+      App.space.private.set(App.docTitlesListKey, App.docTitlesList);
+    });
   },
 
   Textdoc: function() {
