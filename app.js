@@ -56,8 +56,29 @@ var App = {
   },
 
   render: function() {
-    
+    $(document).on("click", "#create-new-btn", function() {
+      App.openEditor();
+    });
+  },
+
+  openEditor: function(_docId) {
+    $("#homepage").hide();
+
+    var heading;
+    var content;
+
+    if (_docId == undefined) {
+      heading = "Type heading here";
+      content = "Type content here";
+    } else {
+      App.space.private.get(_docId).then(function(docObj) {
+        heading = docObj.title;
+        content = docObj.content;
+      })
+    }
   }
+
+
 }
 
 $(function() {
