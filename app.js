@@ -6,6 +6,7 @@ var App = {
   box: undefined,
   space: undefined,
   spaceName: "myApp",
+  openDoc: undefined,
 
   init: function() {
     return App.initWeb3();
@@ -59,6 +60,10 @@ var App = {
     $(document).on("click", "#create-new-btn", function() {
       App.openEditor();
     });
+    $(document).on("click", "#text-editor-save", function() {
+      console.log("clicked save");
+      App.saveDoc();
+    })
   },
 
   openEditor: function(_docId) {
@@ -66,16 +71,47 @@ var App = {
 
     var heading;
     var content;
+    App.openDoc = undefined;
 
     if (_docId == undefined) {
       heading = "Type heading here";
       content = "Type content here";
+      App.__openEditor(heading, content);
     } else {
       App.space.private.get(_docId).then(function(docObj) {
+        App.openDoc = docObj;
         heading = docObj.title;
         content = docObj.content;
+        App.__openEditor(heading, content);
       })
     }
+
+  },
+
+  __openEditor: function(heading, content) {
+    $("#heading").text(heading);
+    $("#text").html(content);
+    $("#text-editor").show();
+  },
+
+  saveDoc: function() {
+    if (App.openDoc == undefined) {
+      App.openDoc = new App.Textdoc();
+    }
+    App.openDoc.title = $("#heading").text();
+    App.openDoc.content = $("#text").html();
+    App.space.private.set(App.openDoc.id, App.openDoc);
+  },
+
+  Textdoc: function() {
+    this.title = null;
+    this.address = null;
+    this.content = null;
+    this.timestamp = getUnixTimestamp();
+    this.id = web3.utils.keccak256(this.timestamp + App.account).substr(0, 42);
+    this.counterparty = null;
+    this.fundsData = null;
+    this.version = null
   }
 
 
@@ -86,3 +122,9 @@ $(function() {
     App.init();
   });
 });
+
+
+function getUnixTimestamp() {
+  var timestamp = new Date();
+  return timestamp.getTime();
+}
