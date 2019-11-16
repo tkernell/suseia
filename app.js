@@ -11,6 +11,8 @@ var App = {
   docTitlesListKey: "__docTitles",
 
   init: function() {
+    $("#text-editor").hide();
+    $("#homepage").show();
     return App.initWeb3();
   },
 
@@ -59,11 +61,13 @@ var App = {
   },
 
   render: function() {
-
+    $("#text-editor").hide();
+    $("#homepage").show();
     App.space.private.get(App.docTitlesListKey).then(function(titlesList) {
       if (titlesList != null) {
         App.docTitlesList = titlesList;
       }
+      App.populateDocsList();
     });
 
     $(document).on("click", "#create-new-btn", function() {
@@ -72,7 +76,29 @@ var App = {
     $(document).on("click", "#text-editor-save", function() {
       console.log("clicked save");
       App.saveDoc();
+    });
+    $(document).on("click", "#close-text-editor-btn", function() {
+      App.render();
     })
+  },
+
+  populateDocsList: function() {
+    var docIds = Object.keys(App.docTitlesList);
+    var $listGroupItem;
+    var $listGroupItemHeading;
+    var $listGroup = $(".list-group");
+    $listGroup.html(""); // Clear list for refresh
+    for (let i in docIds) {
+      $listGroupItem = $("<div>", { class: "list-group-item", id: docIds[i] + "-list-item" });
+      $listGroupItemHeading = $("<h4>", { class: "list-group-heading" });
+      $listGroupItemHeading.text(App.docTitlesList[docIds[i]]);
+      $listGroupItem.append($listGroupItemHeading);
+      $listGroup.append($listGroupItem);
+
+      $(document).on("click", "#" + docIds[i] + "-list-item", function() {
+        App.openEditor(docIds[i]);
+      });
+    }
   },
 
   openEditor: function(_docId) {
@@ -109,7 +135,7 @@ var App = {
     }
     App.openDoc.title = $("#heading").text();
     App.openDoc.content = $("#text").html();
-    App.space.private.set(App.openDoc.id, App.openDoc).then(function(itWorked) {;
+    App.space.private.set(App.openDoc.id, App.openDoc).then(function(itWorked) {
       App.docTitlesList[App.openDoc.id] = App.openDoc.title;
       App.space.private.set(App.docTitlesListKey, App.docTitlesList);
     });
