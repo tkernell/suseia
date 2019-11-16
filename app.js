@@ -55,21 +55,12 @@ var App = {
       space.syncDone.then(function() {
         console.log(space);
         App.space = space;
-        return App.render();
+        return App.runOnce();
       });
     });
   },
 
-  render: function() {
-    $("#text-editor").hide();
-    $("#homepage").show();
-    App.space.private.get(App.docTitlesListKey).then(function(titlesList) {
-      if (titlesList != null) {
-        App.docTitlesList = titlesList;
-      }
-      App.populateDocsList();
-    });
-
+  runOnce: function() {
     $(document).on("click", "#create-new-btn", function() {
       App.openEditor();
     });
@@ -80,6 +71,18 @@ var App = {
     $(document).on("click", "#close-text-editor-btn", function() {
       App.render();
     })
+    return App.render();
+  },
+
+  render: function() {
+    $("#text-editor").hide();
+    $("#homepage").show();
+    App.space.private.get(App.docTitlesListKey).then(function(titlesList) {
+      if (titlesList != null) {
+        App.docTitlesList = titlesList;
+      }
+      App.populateDocsList();
+    });    
   },
 
   populateDocsList: function() {
@@ -136,6 +139,7 @@ var App = {
     App.openDoc.title = $("#heading").text();
     App.openDoc.content = $("#text").html();
     App.space.private.set(App.openDoc.id, App.openDoc).then(function(itWorked) {
+      console.log("Doc saved at time: " + getUnixTimestamp());
       App.docTitlesList[App.openDoc.id] = App.openDoc.title;
       App.space.private.set(App.docTitlesListKey, App.docTitlesList);
     });
