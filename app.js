@@ -82,7 +82,7 @@ var App = {
         App.docTitlesList = titlesList;
       }
       App.populateDocsList();
-    });    
+    });
   },
 
   populateDocsList: function() {
@@ -139,7 +139,7 @@ var App = {
     App.openDoc.title = $("#heading").text();
     App.openDoc.content = $("#text").html();
     App.space.private.set(App.openDoc.id, App.openDoc).then(function(itWorked) {
-      console.log("Doc saved at time: " + getUnixTimestamp());
+      console.log("Doc saved at time: " + (new Date()).getTime());
       App.docTitlesList[App.openDoc.id] = App.openDoc.title;
       App.space.private.set(App.docTitlesListKey, App.docTitlesList);
     });
@@ -149,7 +149,7 @@ var App = {
     this.title = null;
     this.address = null;
     this.content = null;
-    this.timestamp = getUnixTimestamp();
+    this.timestamp = (new Date()).getTime();
     this.id = web3.utils.keccak256(this.timestamp + App.account).substr(0, 42);
     this.counterparty = null;
     this.fundsData = null;
@@ -164,9 +164,3 @@ $(function() {
     App.init();
   });
 });
-
-
-function getUnixTimestamp() {
-  var timestamp = new Date();
-  return timestamp.getTime();
-}

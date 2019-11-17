@@ -9,3 +9,23 @@ h1 {
   font-style: italic;
   color: #373fff;
 }
+
+#heading {
+  outline: none;
+}
+
+#text {
+  outline: none;
+}
+
+#text-editor-save {
+  position: fixed;
+  bottom: 1px;
+  right: 10px;
+}
+
+#close-text-editor-btn {
+  position: fixed;
+  top: 10px;
+  right: 20px;
+}
