@@ -33,8 +33,17 @@ var App = {
       console.log("Ethereum enabled");
       App.account = window.ethereum.selectedAddress;
       console.log("In initEth: " + App.account);
-      return App.initBox();
+      return App.initContract();
     });
+  },
+
+  initContract: function() {
+    var abi = JSON.parse('[{"constant":true,"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"owners","outputs":[{"internalType":"bool","name":"","type":"bool"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"internalType":"uint256","name":"","type":"uint256"}],"name":"docHashLog","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"name":"docs","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"internalType":"address","name":"_newOwner","type":"address"}],"name":"addOwner","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"internalType":"bytes32","name":"_docId","type":"bytes32"},{"internalType":"bytes32","name":"_docHash","type":"bytes32"}],"name":"updateDocs","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"internalType":"uint256","name":"","type":"uint256"}],"name":"docIdLog","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"getDocIdLogLength","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"inputs":[],"payable":false,"stateMutability":"nonpayable","type":"constructor"}]');
+
+    App.contracts.SimpleStorage = new web3.eth.Contract(abi);
+    App.contracts.SimpleStorage.options.address = '0xa425b6824bad190ca7972a8d15cf17fe946edf21';
+
+    return App.initBox();
   },
 
   initBox: function() {
