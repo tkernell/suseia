@@ -163,6 +163,14 @@ var App = {
     this.counterparty = null;
     this.fundsData = null;
     this.version = null
+  },
+
+  commitDocHash: function() {
+    App.contracts.SimpleStorage.methods.updateDocs(
+      App.openDoc.id,
+      web3.utils.keccak256(App.openDoc.content)).send({
+        from: App.account
+      });
   }
 
 
