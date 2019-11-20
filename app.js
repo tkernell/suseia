@@ -89,7 +89,6 @@ var App = {
       App.commitDocHash();
     });
 
-
     return App.render();
   },
 
@@ -121,6 +120,11 @@ var App = {
         App.openEditor(docIds[i]);
       });
     }
+    $(".list-group-item").hover(function() {
+      $(this).css("background-color", "#add8e6");
+    }, function() {
+      $(this).css("background-color", "white");
+    });
   },
 
   openEditor: function(_docId) {
