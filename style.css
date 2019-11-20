@@ -24,6 +24,14 @@ h1 {
   right: 10px;
 }
 
+#text-editor-hash-btn {
+  position: fixed;
+  background-color: purple;
+  bottom: 1px;
+  right: 100px;
+  border-color: purple;
+}
+
 #close-text-editor-btn {
   position: fixed;
   top: 10px;
