@@ -18,17 +18,8 @@ h1 {
   outline: none;
 }
 
-#text-editor-save {
-  position: fixed;
-  bottom: 1px;
-  right: 10px;
-}
-
 #text-editor-hash-btn {
-  position: fixed;
   background-color: purple;
-  bottom: 1px;
-  right: 100px;
   border-color: purple;
 }
 
@@ -36,4 +27,8 @@ h1 {
   position: fixed;
   top: 10px;
   right: 20px;
+}
+
+.btn-space {
+  margin-right: 10px;
 }

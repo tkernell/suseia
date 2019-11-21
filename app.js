@@ -88,6 +88,9 @@ var App = {
       App.openDoc.content = $("#text").html();
       App.commitDocHash();
     });
+    $(document).on("input", "#text", function() {
+      App.renderNavbarFunds($(this).html());
+    });
 
     return App.render();
   },
@@ -143,6 +146,7 @@ var App = {
         App.openDoc = docObj;
         heading = docObj.title;
         content = docObj.content;
+        App.renderNavbarFunds(content);
         App.__openEditor(heading, content);
       })
     }
@@ -188,6 +192,26 @@ var App = {
       web3.utils.keccak256(App.openDoc.content)).send({
         from: App.account
       });
+  },
+
+  renderNavbarFunds: function(textContent) {
+    // const $this = $(this);
+    var result = textDataExtractor(textContent);
+
+    var rewardA = 0;
+    var depositA = 0;
+    var rewardB = 0;
+    var depositB = 0;
+
+    for (let i in result) {
+      rewardA += result[i][0];
+      depositA += result[i][1];
+      rewardB += result[i][2];
+      depositB += result[i][3];
+    }
+    // return ([rewardA, depositA, rewardB, depositB]);
+    $("#navbar-text-partyA").text("Party A: " + rewardA + ", " + depositA);
+    $("#navbar-text-partyB").text("Party B: " + rewardB + ", " + depositB);
   }
 
 
