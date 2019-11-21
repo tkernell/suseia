@@ -161,6 +161,9 @@ var App = {
     }
     App.openDoc.title = $("#heading").text();
     App.openDoc.content = $("#text").html();
+    if (App.openDoc.content.includes("_[")) {
+      App.openDoc.fundsData = textDataExtractor(App.openDoc.content);
+    }
     App.space.private.set(App.openDoc.id, App.openDoc).then(function(itWorked) {
       console.log("Doc saved at time: " + (new Date()).getTime());
       App.docTitlesList[App.openDoc.id] = App.openDoc.title;
@@ -195,3 +198,30 @@ $(function() {
     App.init();
   });
 });
+
+
+function textDataExtractor(stringInput, openingDelim="_[", closingDelim="]_", commaDelim=",") {
+  var firstSplit = stringInput.split(openingDelim);
+  var secondSplit = [];
+  var dataset = [];
+
+  var tempHolder;
+  for (let i in firstSplit) {
+    tempHolder = firstSplit[i].split(closingDelim);
+    if (tempHolder.length > 1) {
+      secondSplit.push(tempHolder[0]);
+    }
+  }
+
+  var tempArr = [];
+  for (let i in secondSplit) {
+    tempArr = secondSplit[i].split(commaDelim);
+    dataset[i] = [];
+
+    for (let j in tempArr) {
+      dataset[i][j] = parseFloat(tempArr[j]);
+    }
+  }
+
+  return (dataset);
+}
