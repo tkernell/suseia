@@ -90,6 +90,8 @@ var App = {
     });
     $(document).on("input", "#text", function() {
       App.renderNavbarFunds($(this).html());
+
+
     });
 
     return App.render();
@@ -163,15 +165,24 @@ var App = {
     if (App.openDoc == undefined) {
       App.openDoc = new App.Textdoc();
     }
-    App.openDoc.title = $("#heading").text();
-    App.openDoc.content = $("#text").html();
-    if (App.openDoc.content.includes("_[")) {
-      App.openDoc.fundsData = textDataExtractor(App.openDoc.content);
+    var tempDoc = App.openDoc;
+    tempDoc.title = $("#heading").text();
+    tempDoc.content = $("#text").html();
+    if (tempDoc.content.includes("_[")) {
+      tempDoc.fundsData = textDataExtractor(tempDoc.content);
     }
-    App.space.private.set(App.openDoc.id, App.openDoc).then(function(itWorked) {
-      console.log("Doc saved at time: " + (new Date()).getTime());
-      App.docTitlesList[App.openDoc.id] = App.openDoc.title;
-      App.space.private.set(App.docTitlesListKey, App.docTitlesList);
+    App.space.private.set(tempDoc.id, tempDoc).then(function(itWorked) {
+      if (itWorked) {
+        App.openDoc = tempDoc;
+        $("#text-editor-save").text("Saved!")
+        console.log("Doc saved at time: " + (new Date()).getTime());
+        App.docTitlesList[App.openDoc.id] = App.openDoc.title;
+        App.space.private.set(App.docTitlesListKey, App.docTitlesList);
+        setTimeout(
+          function() {
+            $("#text-editor-save").text("Save");
+          }, 5000);
+      }
     });
   },
 
