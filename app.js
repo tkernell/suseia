@@ -94,8 +94,10 @@ var App = {
     });
     $(document).on("input", "#text", function() {
       App.renderNavbarFunds($(this).html());
-
-
+    });
+    App.space.private.get(App.keysSaveName).then(function(keys) {
+      App.keys = keys;
+      console.log('Keys gotten!');
     });
 
     return App.render();
@@ -316,7 +318,7 @@ async function encryptMessage(message, key) {
 
 async function decryptMessage(encryptedMessage, key) {
   const messageToSign = App.messageToSign;
-  const passcode = await web3.eth.personal.sign(web3.utils.fromUtf8(messageToSign), App.account, console.log);
+  const passcode = await web3.eth.personal.sign(web3.utils.fromUtf8(messageToSign), App.account);
 
   const privKeyObj = (await openpgp.key.readArmored(key.privateKeyArmored)).keys[0];
   await privKeyObj.decrypt(passcode);
