@@ -9,6 +9,10 @@ var App = {
   openDoc: undefined,
   docTitlesList: {},
   docTitlesListKey: "__docTitles",
+  keys: {},
+  keysSaveName: "__keys",
+  pubKeyThread: undefined,
+  messageToSign: "TEST By signing this message, you are generating a password that will be used to encrypt and decrypt your PGP private key. Make sure you are only signing this message for applications that you want to have access to this private key. This message was originally generated for the Ultreia commitment mechanism application.",
 
   init: function() {
     $("#text-editor").hide();
@@ -223,6 +227,26 @@ var App = {
     // return ([rewardA, depositA, rewardB, depositB]);
     $("#navbar-text-partyA").text("Party A: " + rewardA + ", " + depositA);
     $("#navbar-text-partyB").text("Party B: " + rewardB + ", " + depositB);
+  },
+
+  postNewPublicKey: function() {
+    generateKeyOptionsInput().then(function(options) {
+      generateKey(options).then(function(keys) {
+        App.keys = keys;
+        App.space.private.set(App.keysSaveName, App.keys).then(function(itWorked) {
+          if (itWorked) {
+            App.space.joinThread('myPublicKey', {members: true}).then(function(thread) {
+              App.pubKeyThread = thread;
+              App.pubKeyThread.post(App.keys.publicKeyArmored).then(function(itWorked) {
+                if (itWorked) {
+                  console.log("Public key published!");
+                }
+              })
+            })
+          }
+        })
+      })
+    })
   }
 
 
@@ -259,4 +283,49 @@ function textDataExtractor(stringInput, openingDelim="_[", closingDelim="]_", co
   }
 
   return (dataset);
+}
+
+async function generateKey(options) {
+
+  var key = await openpgp.generateKey(options);
+  console.log('Key generated');
+  return key;
+}
+
+async function generateKeyOptionsInput() {
+  const passcode = await web3.eth.personal.sign(web3.utils.fromUtf8(App.messageToSign), App.account);
+
+  var options = {
+    userIds: [{ name: 'Alice', email: 'alice@example.com' }],
+    numBits: 2048,
+    passphrase: passcode
+  }
+
+  return options;
+}
+
+async function encryptMessage(message, key) {
+  const options = {
+    message: openpgp.message.fromText(message),
+    publicKeys: (await openpgp.key.readArmored(key.publicKeyArmored)).keys
+  };
+  let encryptedMessage = (await openpgp.encrypt(options)).data;
+
+  return encryptedMessage;
+}
+
+async function decryptMessage(encryptedMessage, key) {
+  const messageToSign = App.messageToSign;
+  const passcode = await web3.eth.personal.sign(web3.utils.fromUtf8(messageToSign), App.account, console.log);
+
+  const privKeyObj = (await openpgp.key.readArmored(key.privateKeyArmored)).keys[0];
+  await privKeyObj.decrypt(passcode);
+
+  const options = {
+    message: await openpgp.message.readArmored(encryptedMessage),
+    privateKeys: [privKeyObj]
+  };
+
+  const plaintext = await openpgp.decrypt(options);
+  return plaintext.data;
 }
