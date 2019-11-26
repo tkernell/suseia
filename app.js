@@ -11,7 +11,8 @@ var App = {
   docTitlesListKey: "__docTitles",
   keys: {},
   keysSaveName: "__keys",
-  pubKeyThread: undefined,
+  pubKeyThread: undefined,    // Maybe not needed?
+  inboxThread: undefined,
   messageToSign: "TEST By signing this message, you are generating a password that will be used to encrypt and decrypt your PGP private key. Make sure you are only signing this message for applications that you want to have access to this private key. This message was originally generated for the Ultreia commitment mechanism application.",
 
   init: function() {
@@ -66,6 +67,7 @@ var App = {
   initSpace: function() {
     console.log("Opening space...");
     App.box.openSpace(App.spaceName).then(function(space) {
+      console.log("Space syncing...");
       space.syncDone.then(function() {
         console.log(space);
         App.space = space;
@@ -96,9 +98,24 @@ var App = {
       App.renderNavbarFunds($(this).html());
     });
     App.space.private.get(App.keysSaveName).then(function(keys) {
-      App.keys = keys;
-      console.log('Keys gotten!');
+      if (keys != null) {
+        App.keys = keys;
+        console.log('Keys retrieved!');
+      } else {
+        App.postNewPublicKey();
+      }
     });
+    $(document).on("click", "#send-doc-crypt-btn", function() {
+      const partyAddress = $("#share-party-input").val();
+      App.retrievePublicKey(partyAddress).then(function(pubKey) {
+        encryptMessage($("#text").html(), pubKey).then(function(encryptedMessage) {
+          console.log(encryptedMessage);
+          App.outgoingMessage(partyAddress, encryptedMessage);
+        })
+      })
+    });
+    App.joinInboxThread();
+
 
     return App.render();
   },
@@ -249,6 +266,35 @@ var App = {
         })
       })
     })
+  },
+
+  joinInboxThread: function() {
+    App.space.joinThread('myInbox', {members: false}).then(function(thread) {
+      App.inboxThread = thread;
+      console.log("Watching inbox...");
+      App.inboxThread.onUpdate(App.incomingMessage); // App.newMessage function to be defined...
+    })
+  },
+
+  incomingMessage: function() {
+    console.log("New message in inbox!");
+  },
+
+  outgoingMessage: function(address, message) {
+    App.space.joinThread('myInbox', {firstModerator: address, members: false}).then(function(thread) {
+      thread.post(message).then(function(postId) {
+        console.log("new postId: " + postId);
+      });
+    })
+  },
+
+  retrievePublicKey: async function(indentifier) {
+    try {
+      const keyThread = await Box.getThread(App.spaceName, "myPublicKey", indentifier, true);
+      return (keyThread[0].message);
+    } catch (err) {
+      console.log("No pubKey found");
+    }
   }
 
 
@@ -309,7 +355,7 @@ async function generateKeyOptionsInput() {
 async function encryptMessage(message, key) {
   const options = {
     message: openpgp.message.fromText(message),
-    publicKeys: (await openpgp.key.readArmored(key.publicKeyArmored)).keys
+    publicKeys: (await openpgp.key.readArmored(key)).keys
   };
   let encryptedMessage = (await openpgp.encrypt(options)).data;
 
