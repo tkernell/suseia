@@ -9,6 +9,11 @@ var App = {
   openDoc: undefined,
   docTitlesList: {},
   docTitlesListKey: "__docTitles",
+  keys: {},
+  keysSaveName: "__keys",
+  pubKeyThread: undefined,    // Maybe not needed?
+  inboxThread: undefined,
+  messageToSign: "TEST By signing this message, you are generating a password that will be used to encrypt and decrypt your PGP private key. Make sure you are only signing this message for applications that you want to have access to this private key. This message was originally generated for the Ultreia commitment mechanism application.",
 
   init: function() {
     $("#text-editor").hide();
@@ -62,6 +67,7 @@ var App = {
   initSpace: function() {
     console.log("Opening space...");
     App.box.openSpace(App.spaceName).then(function(space) {
+      console.log("Space syncing...");
       space.syncDone.then(function() {
         console.log(space);
         App.space = space;
@@ -88,6 +94,28 @@ var App = {
       App.openDoc.content = $("#text").html();
       App.commitDocHash();
     });
+    $(document).on("input", "#text", function() {
+      App.renderNavbarFunds($(this).html());
+    });
+    App.space.private.get(App.keysSaveName).then(function(keys) {
+      if (keys != null) {
+        App.keys = keys;
+        console.log('Keys retrieved!');
+      } else {
+        App.postNewPublicKey();
+      }
+    });
+    $(document).on("click", "#send-doc-crypt-btn", function() {
+      const partyAddress = $("#share-party-input").val();
+      App.retrievePublicKey(partyAddress).then(function(pubKey) {
+        encryptMessage($("#text").html(), pubKey).then(function(encryptedMessage) {
+          console.log(encryptedMessage);
+          App.outgoingMessage(partyAddress, encryptedMessage);
+        })
+      })
+    });
+    App.joinInboxThread();
+
 
     return App.render();
   },
@@ -143,6 +171,7 @@ var App = {
         App.openDoc = docObj;
         heading = docObj.title;
         content = docObj.content;
+        App.renderNavbarFunds(content);
         App.__openEditor(heading, content);
       })
     }
@@ -159,12 +188,24 @@ var App = {
     if (App.openDoc == undefined) {
       App.openDoc = new App.Textdoc();
     }
-    App.openDoc.title = $("#heading").text();
-    App.openDoc.content = $("#text").html();
-    App.space.private.set(App.openDoc.id, App.openDoc).then(function(itWorked) {
-      console.log("Doc saved at time: " + (new Date()).getTime());
-      App.docTitlesList[App.openDoc.id] = App.openDoc.title;
-      App.space.private.set(App.docTitlesListKey, App.docTitlesList);
+    var tempDoc = App.openDoc;
+    tempDoc.title = $("#heading").text();
+    tempDoc.content = $("#text").html();
+    if (tempDoc.content.includes("_[")) {
+      tempDoc.fundsData = textDataExtractor(tempDoc.content);
+    }
+    App.space.private.set(tempDoc.id, tempDoc).then(function(itWorked) {
+      if (itWorked) {
+        App.openDoc = tempDoc;
+        $("#text-editor-save").text("Saved!")
+        console.log("Doc saved at time: " + (new Date()).getTime());
+        App.docTitlesList[App.openDoc.id] = App.openDoc.title;
+        App.space.private.set(App.docTitlesListKey, App.docTitlesList);
+        setTimeout(
+          function() {
+            $("#text-editor-save").text("Save");
+          }, 5000);
+      }
     });
   },
 
@@ -185,6 +226,75 @@ var App = {
       web3.utils.keccak256(App.openDoc.content)).send({
         from: App.account
       });
+  },
+
+  renderNavbarFunds: function(textContent) {
+    // const $this = $(this);
+    var result = textDataExtractor(textContent);
+
+    var rewardA = 0;
+    var depositA = 0;
+    var rewardB = 0;
+    var depositB = 0;
+
+    for (let i in result) {
+      rewardA += result[i][0];
+      depositA += result[i][1];
+      rewardB += result[i][2];
+      depositB += result[i][3];
+    }
+    // return ([rewardA, depositA, rewardB, depositB]);
+    $("#navbar-text-partyA").text("Party A: " + rewardA + ", " + depositA);
+    $("#navbar-text-partyB").text("Party B: " + rewardB + ", " + depositB);
+  },
+
+  postNewPublicKey: function() {
+    generateKeyOptionsInput().then(function(options) {
+      generateKey(options).then(function(keys) {
+        App.keys = keys;
+        App.space.private.set(App.keysSaveName, App.keys).then(function(itWorked) {
+          if (itWorked) {
+            App.space.joinThread('myPublicKey', {members: true}).then(function(thread) {
+              App.pubKeyThread = thread;
+              App.pubKeyThread.post(App.keys.publicKeyArmored).then(function(itWorked) {
+                if (itWorked) {
+                  console.log("Public key published!");
+                }
+              })
+            })
+          }
+        })
+      })
+    })
+  },
+
+  joinInboxThread: function() {
+    App.space.joinThread('myInbox', {members: false}).then(function(thread) {
+      App.inboxThread = thread;
+      console.log("Watching inbox...");
+      App.inboxThread.onUpdate(App.incomingMessage); // App.newMessage function to be defined...
+    })
+  },
+
+  incomingMessage: function() {
+    console.log("New message in inbox!");
+  },
+
+  outgoingMessage: function(address, message) {
+    App.space.joinThread('myInbox', {firstModerator: address, members: false}).then(function(thread) {
+      thread.post(message).then(function(postId) {
+        console.log("new postId: " + postId);
+      });
+    })
+  },
+
+  retrievePublicKey: async function(indentifier) {
+    try {
+      const keyThread = await Box.getThread(App.spaceName, "myPublicKey", indentifier, true);
+      return (keyThread[0].message);
+    } catch (err) {
+      console.log("No pubKey found");
+    }
   }
 
 
@@ -195,3 +305,75 @@ $(function() {
     App.init();
   });
 });
+
+
+function textDataExtractor(stringInput, openingDelim="_[", closingDelim="]_", commaDelim=",") {
+  var firstSplit = stringInput.split(openingDelim);
+  var secondSplit = [];
+  var dataset = [];
+
+  var tempHolder;
+  for (let i in firstSplit) {
+    tempHolder = firstSplit[i].split(closingDelim);
+    if (tempHolder.length > 1) {
+      secondSplit.push(tempHolder[0]);
+    }
+  }
+
+  var tempArr = [];
+  for (let i in secondSplit) {
+    tempArr = secondSplit[i].split(commaDelim);
+    dataset[i] = [];
+
+    for (let j in tempArr) {
+      dataset[i][j] = parseFloat(tempArr[j]);
+    }
+  }
+
+  return (dataset);
+}
+
+async function generateKey(options) {
+
+  var key = await openpgp.generateKey(options);
+  console.log('Key generated');
+  return key;
+}
+
+async function generateKeyOptionsInput() {
+  const passcode = await web3.eth.personal.sign(web3.utils.fromUtf8(App.messageToSign), App.account);
+
+  var options = {
+    userIds: [{ name: 'Alice', email: 'alice@example.com' }],
+    numBits: 2048,
+    passphrase: passcode
+  }
+
+  return options;
+}
+
+async function encryptMessage(message, key) {
+  const options = {
+    message: openpgp.message.fromText(message),
+    publicKeys: (await openpgp.key.readArmored(key)).keys
+  };
+  let encryptedMessage = (await openpgp.encrypt(options)).data;
+
+  return encryptedMessage;
+}
+
+async function decryptMessage(encryptedMessage, key) {
+  const messageToSign = App.messageToSign;
+  const passcode = await web3.eth.personal.sign(web3.utils.fromUtf8(messageToSign), App.account);
+
+  const privKeyObj = (await openpgp.key.readArmored(key.privateKeyArmored)).keys[0];
+  await privKeyObj.decrypt(passcode);
+
+  const options = {
+    message: await openpgp.message.readArmored(encryptedMessage),
+    privateKeys: [privKeyObj]
+  };
+
+  const plaintext = await openpgp.decrypt(options);
+  return plaintext.data;
+}

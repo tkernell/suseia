@@ -16,7 +16,7 @@
     <link rel="stylesheet" href="/style.css" />
   </head>
   <body>
-    <div class="container">
+    <div class="container-fluid">
       <div id="homepage">
         <h1>Your Documents</h1>
         <div class="" id="create-new-btn-div">
@@ -34,8 +34,46 @@
         </button>
         <h4 id="heading" contenteditable="true"></h4>
         <p id="text" contenteditable="true"></p>
-        <button type="button" class="btn btn-primary bg-purple" id="text-editor-hash-btn">Hash &diams;</button>
-        <button type="button" class="btn btn-primary" id="text-editor-save">Save</button>
+
+
+        <div class="modal" id="counterparty-modal">
+          <div class="modal-dialog">
+            <div class="modal-content">
+
+              <div class="modal-header">
+                <h4 class="modal-title">Sharing</h4>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+              </div>
+
+              <div class="modal-body">
+                <form>
+                  <div class="form-group">
+                    <label for="share-party-input">Ethereum Address or DID</label>
+                    <input type="text" class="form-control" id="share-party-input">
+                  </div>
+                  <button type="button" class="btn btn-success" id="send-doc-crypt-btn">Send</button>
+                </form>
+              </div>
+
+              <div class="modal-footer">
+                <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+
+        <nav class="navbar fixed-bottom navbar-dark bg-dark">
+          <a class="navbar-brand" href="#">;)</a>
+          <span class="navbar-text" id="navbar-text-partyA"></span>
+          <span class="navbar-text" id="navbar-text-partyB"></span>
+          <form class="form-inline">
+            <button type="button" class="btn btn-info btn-space" data-toggle="modal" data-target="#counterparty-modal" id="toggle-sharing-modal-btn">Share</button>
+            <button type="button" class="btn btn-primary bg-purple btn-space" id="text-editor-hash-btn">Hash &diams;</button>
+            <button type="button" class="btn btn-primary btn-space" id="text-editor-save">Save</button>
+          </form>
+        </nav>
       </div>
 
     </div>
@@ -54,6 +92,7 @@
       integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
       crossorigin="anonymous"
     ></script>
+    <script src="js/openpgp.min.js"></script>
     <script src="app.js"></script>
   </body>
 </html>
