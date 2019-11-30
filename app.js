@@ -14,6 +14,7 @@ var App = {
   pubKeyThread: undefined,    // Maybe not needed?
   inboxThread: undefined,
   messageToSign: "TEST By signing this message, you are generating a password that will be used to encrypt and decrypt your PGP private key. Make sure you are only signing this message for applications that you want to have access to this private key. This message was originally generated for the Ultreia commitment mechanism application.",
+  inboxMessages: undefined,
 
   init: function() {
     $("#text-editor").hide();
@@ -135,7 +136,7 @@ var App = {
     var docIds = Object.keys(App.docTitlesList);
     var $listGroupItem;
     var $listGroupItemHeading;
-    var $listGroup = $(".list-group");
+    var $listGroup = $("#docs-list");
     $listGroup.html(""); // Clear list for refresh
     for (let i in docIds) {
       $listGroupItem = $("<div>", { class: "list-group-item", id: docIds[i] + "-list-item" });
@@ -153,6 +154,36 @@ var App = {
     }, function() {
       $(this).css("background-color", "white");
     });
+
+    // App.populateInboxList();
+  },
+
+  populateInboxList: async function() {
+    var inboxPosts = await App.inboxThread.getPosts();
+    App.inboxMessages = inboxPosts;
+    var $listGroupItem;
+    var $listGroupItemHeading;
+    var $listGroupItemText;
+    var $listGroup = $("#inbox-list");
+    $listGroup.html(""); // Clear list for refresh
+    for (let i in inboxPosts) {
+      $listGroupItem = $("<div>", { class: "list-group-item", id: inboxPosts[i].postId + "-inbox-list-item" });
+      $listGroupItemHeading = $("<h4>", { class: "list-group-item-heading" });
+      $listGroupItemHeading.text(inboxPosts[i].timestamp);
+      $listGroupItemText = $("<p>", { class: "list-group-item-text" });
+      $listGroupItemText.text(inboxPosts[i].postId);
+      $listGroupItem.append($listGroupItemHeading, $listGroupItemText);
+      $listGroup.append($listGroupItem);
+
+      $(document).on("click", "#" + inboxPosts[i].postId + "-inbox-list-item", function() {
+        decryptMessage(App.inboxMessages[i].message, App.keys).then(function(decryptedMessage) {
+
+          App.openEditor();
+          $("#text").html(decryptedMessage);
+        })
+        // $("#text").html(await decryptMessage(inboxPosts[i].message, App.keys.privateKeyArmored));
+      })
+    }
   },
 
   openEditor: function(_docId) {
@@ -215,6 +246,7 @@ var App = {
     this.content = null;
     this.timestamp = (new Date()).getTime();
     this.id = web3.utils.keccak256(this.timestamp + App.account).substr(0, 42);
+    this.firstParty = null;
     this.counterparty = null;
     this.fundsData = null;
     this.version = null
@@ -269,10 +301,12 @@ var App = {
   },
 
   joinInboxThread: function() {
-    App.space.joinThread('myInbox', {members: false}).then(function(thread) {
+    App.space.joinThread('myInbox', { members: false }).then(function(thread) {
       App.inboxThread = thread;
       console.log("Watching inbox...");
       App.inboxThread.onUpdate(App.incomingMessage); // App.newMessage function to be defined...
+
+      App.populateInboxList();
     })
   },
 
