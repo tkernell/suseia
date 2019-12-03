@@ -165,6 +165,10 @@ var App = {
     var $listGroupItemHeading;
     var $listGroupItemText;
     var $listGroup = $("#inbox-list");
+    var $dropdown;
+    var $dropdownToggle;
+    var $dropdownMenu;
+    var $dropdownItem;
     $listGroup.html(""); // Clear list for refresh
     for (let i in inboxPosts) {
       $listGroupItem = $("<div>", { class: "list-group-item", id: inboxPosts[i].postId + "-inbox-list-item" });
@@ -172,18 +176,36 @@ var App = {
       $listGroupItemHeading.text(inboxPosts[i].timestamp);
       $listGroupItemText = $("<p>", { class: "list-group-item-text" });
       $listGroupItemText.text(inboxPosts[i].postId);
-      $listGroupItem.append($listGroupItemHeading, $listGroupItemText);
+
+      $dropdown = $("<div>", { class: "dropdown" });
+      $dropdownToggle = $("<button>", { class: "btn btn-light dropdown-toggle", role: "button", "data-toggle": "dropdown" });
+      $dropdownToggle.text("");
+      $dropdownMenu = $("<div>", { class: "dropdown-menu" });
+      $dropdownItem = $("<a>", { class: "dropdown-item btn btn-danger", id: inboxPosts[i].postId + "-delete-btn" });
+      $dropdownItem.text("Delete");
+
+      $dropdownMenu.append($dropdownItem);
+      $dropdown.append($dropdownToggle, $dropdownMenu);
+
+      $listGroupItem.append($listGroupItemHeading, $listGroupItemText, $dropdown);
       $listGroup.append($listGroupItem);
 
       $(document).on("click", "#" + inboxPosts[i].postId + "-inbox-list-item", function() {
-        decryptMessage(App.inboxMessages[i].message, App.keys).then(function(decryptedMessage) {
+        if ($(this).text() != "Delete") {         // Bad workaround.... FIX THIS
+          decryptMessage(App.inboxMessages[i].message, App.keys).then(function(decryptedMessage) {
+            App.openEditor();
+            $("#text").html(decryptedMessage);
+          });
+        }
+      });
 
-          App.openEditor();
-          $("#text").html(decryptedMessage);
-        })
-        // $("#text").html(await decryptMessage(inboxPosts[i].message, App.keys.privateKeyArmored));
+      $(document).on("click", "#" + inboxPosts[i].postId + "-delete-btn", function() {
+        App.inboxThread.deletePost(inboxPosts[i].postId).then(function(itWorked) {
+          App.populateInboxList();
+        });
       })
     }
+
   },
 
   openEditor: function(_docId) {
