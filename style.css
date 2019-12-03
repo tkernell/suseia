@@ -32,3 +32,13 @@ h1 {
 .btn-space {
   margin-right: 10px;
 }
+
+.dropdown {
+  position: absolute;
+  top: 4px;
+  right: 8px;
+}
+
+.dropdown-toggle {
+  background-color: white;
+}
