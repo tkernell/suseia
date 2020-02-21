@@ -1,2 +1,4 @@
-# suseia
-An experimental project.
+# Suseia
+The Hawk Dove Ultreia Mechanism commits parties to arbitrary promises by administering rewards and punishments based on the parties’ ability to compromise with each other. The parties each have respective rewards and  stakes associated with each promise and must report who ought to receive the reward after the contract period.  If each party’s claim agrees with his associate’s, the rewards are transferred accordingly. However, if parties report conflicting reward recipients, any rewards and deposits associated with that promise are slashed. This is a mechanism that aims to produce truthful outcomes, at least the truth as the two parties see it.
+
+Ultreia runs on the Ethereum blockchain, so it has strong guarantees of the logic that the parties are going to get. Code on Ethereum runs as written. Unfortunately, computation and storage on Ethereum are relatively expensive. If two parties wish to create a hawk-contract with one hundred separate promises to enforce, they would face serious expense by having Ethereum do all of that computation and storage for them. There has to be a better way…
